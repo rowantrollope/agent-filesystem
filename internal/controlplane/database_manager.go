@@ -962,6 +962,25 @@ func (m *DatabaseManager) ListChangelog(ctx context.Context, databaseID, workspa
 	return service.ListChangelog(ctx, route.WorkspaceID, req)
 }
 
+// ListEvents reads the unified workspace events stream (lifecycle + file ops).
+func (m *DatabaseManager) ListEvents(ctx context.Context, databaseID, workspace string, req EventsListRequest) (EventsListResponse, error) {
+	service, _, route, err := m.resolveScopedWorkspace(ctx, databaseID, workspace)
+	if err != nil {
+		return EventsListResponse{}, err
+	}
+	return service.ListEvents(ctx, route.WorkspaceID, req)
+}
+
+// ListResolvedEvents reads the unified events stream for a workspace resolved
+// across databases.
+func (m *DatabaseManager) ListResolvedEvents(ctx context.Context, workspace string, req EventsListRequest) (EventsListResponse, error) {
+	service, _, route, err := m.resolveWorkspace(ctx, workspace)
+	if err != nil {
+		return EventsListResponse{}, err
+	}
+	return service.ListEvents(ctx, route.WorkspaceID, req)
+}
+
 // GetSessionChangelogSummary returns the per-session rollup (op counts, delta bytes).
 func (m *DatabaseManager) GetSessionChangelogSummary(ctx context.Context, databaseID, workspace, sessionID string) (SessionChangelogSummary, error) {
 	service, _, route, err := m.resolveScopedWorkspace(ctx, databaseID, workspace)

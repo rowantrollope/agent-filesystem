@@ -100,6 +100,10 @@ func main() {
 		if err := cmdSession(args); err != nil {
 			fatal(err)
 		}
+	case "events":
+		if err := cmdEvents(args); err != nil {
+			fatal(err)
+		}
 	case "reset":
 		if len(args) > 1 && isHelpArg(args[1]) {
 			fmt.Fprint(os.Stderr, resetUsageText(filepath.Base(os.Args[0])))
@@ -159,6 +163,7 @@ func printUsage() {
 	fmt.Fprintf(w, "  %sdatabase%s             %sDatabase ops — list, use%s\n", bold, reset, dim, reset)
 	fmt.Fprintf(w, "  %scheckpoint%s           %sCheckpoint ops — create, list, restore%s\n", bold, reset, dim, reset)
 	fmt.Fprintf(w, "  %ssession%s              %sSession ops — log, summary%s\n", bold, reset, dim, reset)
+	fmt.Fprintf(w, "  %sevents%s               %sUnified workspace history (lifecycle + file ops)%s\n", bold, reset, dim, reset)
 	fmt.Fprintf(w, "  %sgrep%s <pattern>       %sSearch a workspace in Redis%s\n", bold, reset, dim, reset)
 	// Integrations
 	fmt.Fprintf(w, "  %sconfig%s               %sConfig helpers — get, set, list, unset%s\n", bold, reset, dim, reset)

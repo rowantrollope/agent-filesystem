@@ -110,6 +110,41 @@ export type AFSChangelogResponse = {
   nextCursor?: string;
 };
 
+export type AFSEventKind =
+  | "workspace"
+  | "session"
+  | "checkpoint"
+  | "process"
+  | "file";
+
+export type AFSEventEntry = {
+  id: string;
+  occurredAt?: string;
+  kind: AFSEventKind;
+  op: string;
+  source?: string;
+  actor?: string;
+  sessionId?: string;
+  user?: string;
+  label?: string;
+  agentVersion?: string;
+  hostname?: string;
+  path?: string;
+  prevPath?: string;
+  sizeBytes?: number;
+  deltaBytes?: number;
+  contentHash?: string;
+  prevHash?: string;
+  mode?: number;
+  checkpointId?: string;
+  extras?: Record<string, string>;
+};
+
+export type AFSEventsResponse = {
+  entries: AFSEventEntry[];
+  nextCursor?: string;
+};
+
 export type AFSAgentSession = {
   sessionId: string;
   workspaceId: string;

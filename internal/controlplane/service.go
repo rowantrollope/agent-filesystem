@@ -353,6 +353,16 @@ func (s *Service) ListChangelog(ctx context.Context, workspace string, req Chang
 	return s.store.ListChangelog(ctx, storageID, req)
 }
 
+// ListEvents reads a page of entries from the unified workspace events
+// stream. See EventsListRequest for filter options.
+func (s *Service) ListEvents(ctx context.Context, workspace string, req EventsListRequest) (EventsListResponse, error) {
+	_, storageID, err := s.store.resolveWorkspaceMeta(ctx, workspace)
+	if err != nil {
+		return EventsListResponse{}, err
+	}
+	return s.store.ListEvents(ctx, storageID, req)
+}
+
 // GetSessionChangelogSummary reads the per-session rollup hash.
 func (s *Service) GetSessionChangelogSummary(ctx context.Context, workspace, sessionID string) (SessionChangelogSummary, error) {
 	if strings.TrimSpace(sessionID) == "" {

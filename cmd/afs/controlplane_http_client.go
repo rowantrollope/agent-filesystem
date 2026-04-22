@@ -194,6 +194,47 @@ func (c *httpControlPlaneClient) ListChangelog(ctx context.Context, workspace st
 	return out, nil
 }
 
+func (c *httpControlPlaneClient) ListEvents(ctx context.Context, workspace string, req controlplane.EventsListRequest) (controlplane.EventsListResponse, error) {
+	databaseID, err := c.requireDatabaseID(ctx)
+	if err != nil {
+		return controlplane.EventsListResponse{}, err
+	}
+	rel := c.scopedPathFor(databaseID, "workspaces", workspace, "events")
+	params := url.Values{}
+	if req.Limit > 0 {
+		params.Set("limit", strconv.Itoa(req.Limit))
+	}
+	for _, kind := range req.Kinds {
+		kind = strings.TrimSpace(kind)
+		if kind != "" {
+			params.Add("kind", kind)
+		}
+	}
+	if strings.TrimSpace(req.SessionID) != "" {
+		params.Set("session_id", req.SessionID)
+	}
+	if strings.TrimSpace(req.Path) != "" {
+		params.Set("path", req.Path)
+	}
+	if strings.TrimSpace(req.Since) != "" {
+		params.Set("since", req.Since)
+	}
+	if strings.TrimSpace(req.Until) != "" {
+		params.Set("until", req.Until)
+	}
+	if req.Reverse {
+		params.Set("direction", "desc")
+	}
+	if encoded := params.Encode(); encoded != "" {
+		rel += "?" + encoded
+	}
+	var out controlplane.EventsListResponse
+	if err := c.doJSON(ctx, http.MethodGet, rel, nil, &out, http.StatusOK); err != nil {
+		return controlplane.EventsListResponse{}, err
+	}
+	return out, nil
+}
+
 func (c *httpControlPlaneClient) ListCheckpoints(ctx context.Context, workspace string, limit int) ([]controlplane.CheckpointSummary, error) {
 	rel := c.workspacePath(workspace, "checkpoints")
 	if limit > 0 {

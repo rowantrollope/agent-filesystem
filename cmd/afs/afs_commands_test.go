@@ -75,6 +75,10 @@ func (s stubAFSControlPlane) ListChangelog(context.Context, string, controlplane
 	return controlplane.ChangelogListResponse{}, fmt.Errorf("unexpected ListChangelog call")
 }
 
+func (s stubAFSControlPlane) ListEvents(context.Context, string, controlplane.EventsListRequest) (controlplane.EventsListResponse, error) {
+	return controlplane.EventsListResponse{}, fmt.Errorf("unexpected ListEvents call")
+}
+
 func TestMaterializeWorkspaceWritesTreeAndState(t *testing.T) {
 	t.Helper()
 

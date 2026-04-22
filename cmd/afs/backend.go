@@ -131,6 +131,7 @@ type afsControlPlane interface {
 	SaveCheckpointFromLive(ctx context.Context, workspace, checkpointID string) (bool, error)
 	ForkWorkspace(ctx context.Context, sourceWorkspace, newWorkspace string) error
 	ListChangelog(ctx context.Context, workspace string, req controlplane.ChangelogListRequest) (controlplane.ChangelogListResponse, error)
+	ListEvents(ctx context.Context, workspace string, req controlplane.EventsListRequest) (controlplane.EventsListResponse, error)
 }
 
 type afsBackendSession struct {

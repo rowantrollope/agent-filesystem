@@ -35,8 +35,7 @@ import type { StudioTab } from "../foundation/workspace-tabs";
 import type { AFSWorkspaceView } from "../foundation/types/afs";
 import { BrowseTab } from "./workspace-studio/-browse-tab";
 import { CheckpointsTab } from "./workspace-studio/-checkpoints-tab";
-import { ActivityTab } from "./workspace-studio/-activity-tab";
-import { ChangesTab } from "./workspace-studio/-changes-tab";
+import { HistoryTab } from "./workspace-studio/-history-tab";
 import { SettingsTab } from "./workspace-studio/-settings-tab";
 
 const workspaceStudioSearchSchema = z.object({
@@ -331,14 +330,11 @@ function WorkspaceStudioPage() {
         <TabButton $active={tab === "browse"} onClick={() => setStudioTab("browse")}>
           Browse Files
         </TabButton>
-        <TabButton $active={tab === "changes"} onClick={() => setStudioTab("changes")}>
-          Changelog
-        </TabButton>
         <TabButton $active={tab === "checkpoints"} onClick={() => setStudioTab("checkpoints")}>
           Checkpoints
         </TabButton>
-        <TabButton $active={tab === "activity"} onClick={() => setStudioTab("activity")}>
-          Events
+        <TabButton $active={tab === "history"} onClick={() => setStudioTab("history")}>
+          History
         </TabButton>
         <TabButton $active={tab === "settings"} onClick={() => setStudioTab("settings")}>
           Settings
@@ -361,16 +357,8 @@ function WorkspaceStudioPage() {
         />
       ) : null}
 
-      {tab === "activity" ? (
-        <ActivityTab
-          activity={workspace.activity}
-          updatedAt={workspace.updatedAt}
-          onTabChange={setStudioTab}
-        />
-      ) : null}
-
-      {tab === "changes" ? (
-        <ChangesTab
+      {tab === "history" ? (
+        <HistoryTab
           databaseId={workspace.databaseId}
           workspaceId={workspaceId}
         />
