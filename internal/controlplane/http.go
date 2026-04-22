@@ -960,6 +960,23 @@ func handleWorkspaceRoute(
 			return
 		}
 		writeJSON(w, http.StatusOK, response)
+	case strings.HasSuffix(workspacePath, "/events"):
+		workspace := strings.TrimSuffix(workspacePath, "/events")
+		if r.Method != http.MethodGet {
+			writeError(w, fmt.Errorf("%s not allowed", r.Method))
+			return
+		}
+		req, err := parseEventsListQuery(r)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		response, err := manager.ListEvents(r.Context(), databaseID, workspace, req)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, response)
 	case strings.Contains(workspacePath, "/sessions/") && strings.HasSuffix(workspacePath, "/summary"):
 		parts := strings.Split(strings.Trim(workspacePath, "/"), "/")
 		if len(parts) != 4 || parts[1] != "sessions" || parts[3] != "summary" {
@@ -1234,6 +1251,23 @@ func handleResolvedWorkspaceRoute(
 			return
 		}
 		writeJSON(w, http.StatusOK, response)
+	case strings.HasSuffix(workspacePath, "/events"):
+		workspace := strings.TrimSuffix(workspacePath, "/events")
+		if r.Method != http.MethodGet {
+			writeError(w, fmt.Errorf("%s not allowed", r.Method))
+			return
+		}
+		req, err := parseEventsListQuery(r)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		response, err := manager.ListResolvedEvents(r.Context(), workspace, req)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, response)
 	case strings.HasSuffix(workspacePath, "/sessions"):
 		workspace := strings.TrimSuffix(workspacePath, "/sessions")
 		if r.Method != http.MethodGet {
@@ -1495,6 +1529,33 @@ func queryInt(r *http.Request, key string, fallback int) (int, error) {
 		return 0, fmt.Errorf("invalid %s value %q", key, raw)
 	}
 	return value, nil
+}
+
+// parseEventsListQuery decodes the shared query-string shape used by every
+// /events endpoint (scoped + resolved) into an EventsListRequest.
+func parseEventsListQuery(r *http.Request) (EventsListRequest, error) {
+	limit, err := queryInt(r, "limit", 100)
+	if err != nil {
+		return EventsListRequest{}, err
+	}
+	values := r.URL.Query()
+	var kinds []string
+	for _, raw := range values["kind"] {
+		for _, part := range strings.Split(raw, ",") {
+			if trimmed := strings.TrimSpace(part); trimmed != "" {
+				kinds = append(kinds, trimmed)
+			}
+		}
+	}
+	return EventsListRequest{
+		Kinds:     kinds,
+		SessionID: strings.TrimSpace(values.Get("session_id")),
+		Path:      strings.TrimSpace(values.Get("path")),
+		Since:     strings.TrimSpace(values.Get("since")),
+		Until:     strings.TrimSpace(values.Get("until")),
+		Limit:     limit,
+		Reverse:   strings.EqualFold(values.Get("direction"), "desc"),
+	}, nil
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {

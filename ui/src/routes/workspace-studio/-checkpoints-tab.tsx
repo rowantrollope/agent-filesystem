@@ -22,7 +22,7 @@ import {
 } from "../../foundation/hooks/use-afs";
 import type { AFSWorkspaceDetail, AFSWorkspaceView } from "../../foundation/types/afs";
 
-type StudioTab = "browse" | "checkpoints" | "activity" | "settings";
+type StudioTab = "browse" | "checkpoints" | "history" | "settings";
 
 type Props = {
   workspace: AFSWorkspaceDetail;

@@ -628,10 +628,19 @@ func (s *Store) Audit(ctx context.Context, workspace, op string, extra map[strin
 	for key, value := range extra {
 		fields[key] = fmt.Sprint(value)
 	}
-	return s.rdb.XAdd(ctx, &redis.XAddArgs{
+	if err := s.rdb.XAdd(ctx, &redis.XAddArgs{
 		Stream: workspaceAuditKey(storageID),
 		Values: fields,
-	}).Err()
+	}).Err(); err != nil {
+		return err
+	}
+	// Dual-write to the unified events stream. Failures here are logged but
+	// never surfaced — the legacy audit stream is still the source of truth
+	// during the migration window.
+	if entry, ok := auditEventEntry(op, extra); ok {
+		writeEvents(ctx, s.rdb, storageID, []EventEntry{entry})
+	}
+	return nil
 }
 
 func (s *Store) ListAudit(ctx context.Context, workspace string, limit int64) ([]auditRecord, error) {

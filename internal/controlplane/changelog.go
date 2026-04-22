@@ -133,6 +133,9 @@ func enqueueChangeEntries(ctx context.Context, pipe redis.Pipeliner, storageID s
 			"occurred_ms":  strconv.FormatInt(time.Now().UTC().UnixMilli(), 10),
 		})
 	}
+	// Dual-write to the unified events stream so lifecycle + file ops share a
+	// single source of truth.
+	enqueueEvents(ctx, pipe, storageID, changeEventEntries(entries))
 }
 
 // WriteChangeEntries is the exported non-transactional write path. Used by

@@ -2,6 +2,9 @@ import { cloneInitialAFSState } from "../mocks/afs";
 import type {
   AFSChangelogEntry,
   AFSChangelogResponse,
+  AFSEventEntry,
+  AFSEventKind,
+  AFSEventsResponse,
   AFSDatabase,
   AFSDatabaseListResponse,
   AFSAgentSession,
@@ -61,6 +64,7 @@ type AFSClient = {
   restoreSavepoint: (input: RestoreSavepointInput) => Promise<AFSWorkspaceDetail | null>;
   listActivity: (databaseId?: string, limit?: number) => Promise<AFSActivityEvent[]>;
   listChangelog: (input: ListChangelogInput) => Promise<AFSChangelogResponse>;
+  listEvents: (input: ListEventsInput) => Promise<AFSEventsResponse>;
   getWorkspaceTree: (input: GetWorkspaceTreeInput) => Promise<AFSTreeResponse>;
   getWorkspaceFileContent: (input: GetWorkspaceFileContentInput) => Promise<AFSFileContent | null>;
   quickstart: (input: QuickstartInput) => Promise<QuickstartResponse>;
@@ -78,6 +82,18 @@ export type ListChangelogInput = {
   databaseId?: string;
   workspaceId: string;
   sessionId?: string;
+  since?: string;
+  until?: string;
+  limit?: number;
+  direction?: "asc" | "desc";
+};
+
+export type ListEventsInput = {
+  databaseId?: string;
+  workspaceId: string;
+  kinds?: AFSEventKind[];
+  sessionId?: string;
+  path?: string;
   since?: string;
   until?: string;
   limit?: number;
@@ -105,6 +121,34 @@ type HTTPChangelogEntry = {
 
 type HTTPChangelogResponse = {
   entries: HTTPChangelogEntry[];
+  next_cursor?: string;
+};
+
+type HTTPEventEntry = {
+  id: string;
+  occurred_at?: string;
+  kind: string;
+  op: string;
+  source?: string;
+  actor?: string;
+  session_id?: string;
+  user?: string;
+  label?: string;
+  agent_version?: string;
+  hostname?: string;
+  path?: string;
+  prev_path?: string;
+  size_bytes?: number;
+  delta_bytes?: number;
+  content_hash?: string;
+  prev_hash?: string;
+  mode?: number;
+  checkpoint_id?: string;
+  extras?: Record<string, string>;
+};
+
+type HTTPEventsResponse = {
+  entries: HTTPEventEntry[];
   next_cursor?: string;
 };
 
@@ -1098,6 +1142,11 @@ This workspace was created from the AFS Web UI.
     return { entries: [] };
   },
 
+  async listEvents(_input: ListEventsInput): Promise<AFSEventsResponse> {
+    await wait();
+    return { entries: [] };
+  },
+
   async getWorkspaceTree(input: GetWorkspaceTreeInput) {
     await wait();
     const state = loadState();
@@ -1378,6 +1427,32 @@ function mapChangelogEntry(input: HTTPChangelogEntry): AFSChangelogEntry {
     mode: input.mode,
     checkpointId: input.checkpoint_id,
     source: input.source,
+  };
+}
+
+function mapEventEntry(input: HTTPEventEntry): AFSEventEntry {
+  const kind = (input.kind as AFSEventKind) ?? "workspace";
+  return {
+    id: input.id,
+    occurredAt: input.occurred_at,
+    kind,
+    op: input.op,
+    source: input.source,
+    actor: input.actor,
+    sessionId: input.session_id,
+    user: input.user,
+    label: input.label,
+    agentVersion: input.agent_version,
+    hostname: input.hostname,
+    path: input.path,
+    prevPath: input.prev_path,
+    sizeBytes: input.size_bytes,
+    deltaBytes: input.delta_bytes,
+    contentHash: input.content_hash,
+    prevHash: input.prev_hash,
+    mode: input.mode,
+    checkpointId: input.checkpoint_id,
+    extras: input.extras,
   };
 }
 
@@ -1712,6 +1787,40 @@ const httpAFSClient: AFSClient = {
     );
     return {
       entries: (response.entries ?? []).map(mapChangelogEntry),
+      nextCursor: response.next_cursor,
+    };
+  },
+
+  async listEvents(input: ListEventsInput): Promise<AFSEventsResponse> {
+    const params = new URLSearchParams();
+    if (input.limit != null && input.limit > 0) {
+      params.set("limit", String(input.limit));
+    }
+    for (const kind of input.kinds ?? []) {
+      params.append("kind", kind);
+    }
+    if (input.sessionId) {
+      params.set("session_id", input.sessionId);
+    }
+    if (input.path) {
+      params.set("path", input.path);
+    }
+    if (input.since) {
+      params.set("since", input.since);
+    }
+    if (input.until) {
+      params.set("until", input.until);
+    }
+    if (input.direction) {
+      params.set("direction", input.direction);
+    }
+    const query = params.toString();
+    const base = `${workspaceBasePath(input.databaseId, input.workspaceId)}/events`;
+    const response = await requestJSON<HTTPEventsResponse>(
+      query ? `${base}?${query}` : base,
+    );
+    return {
+      entries: (response.entries ?? []).map(mapEventEntry),
       nextCursor: response.next_cursor,
     };
   },
